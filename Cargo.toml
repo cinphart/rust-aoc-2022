@@ -10,3 +10,4 @@ path = "src/day01.rs"
 
 [dependencies]
 regex = "1"
+itertools = "0.10"
