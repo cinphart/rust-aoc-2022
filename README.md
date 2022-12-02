@@ -1,0 +1,3 @@
+# Advent Of Code 2022 Solutions
+
+Working through the Advent of Code 2022, trying to learn/improve my rust as we go along...
