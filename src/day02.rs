@@ -1,9 +1,6 @@
 use std::fs;
-use core::str::Split;
-use itertools::Itertools;
 
 use regex::Regex;
-use std::ops;
 
 #[derive(Clone, Copy)]
 enum Move {
@@ -26,7 +23,7 @@ trait Score {
 
 impl Move {
     
-    fn score(self: &Self) -> i32 { match (self) {
+    fn score(self: &Self) -> i32 { match self {
         Move::ROCK => 1,
         Move::PAPER => 2,
         Move::SCISSORS => 3
