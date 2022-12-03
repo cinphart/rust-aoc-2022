@@ -19,17 +19,13 @@ fn misplaced_item_priority(line : &str) -> u32 {
     let l = line.len() / 2;
     let front: Vec<u32> = priorities.iter().take(l).map(|s| *s).collect();
     let back: Vec<u32> = priorities.into_iter().skip(l).collect();
-    let result = front.into_iter().find(|s| back.iter().any(|f| *s == *f )).unwrap();
-    result
+    front.into_iter().find(|s| back.iter().any(|f| *s == *f )).unwrap()
 }
 
 fn badge_for_group(g : Chunk<Split<&str>>) -> u32 {
     let rows : Vec<Vec<u32>> = g.into_iter().map(item_priorities).collect();
     let first : Vec<u32> = rows[0].iter().filter(|s| rows[1].iter().any(|f| **s == *f)).map(|s| *s).collect();
-    println!("First {:?}", first);
-    let result = first.into_iter().find(|s| rows[2].iter().any(|f| *s == *f)).unwrap();
-    println!("group result: {}", result);
-    result
+    first.into_iter().find(|s| rows[2].iter().any(|f| *s == *f)).unwrap()
 }
 
 fn part1(name: &str) -> u32 {
