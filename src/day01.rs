@@ -1,17 +1,20 @@
-use std::fs;
 use core::str::Split;
-use itertools::Itertools;
-use itertools::sorted;
 use itertools::rev;
+use itertools::sorted;
+use itertools::Itertools;
+use std::fs;
 
-fn sum_group(iter : &mut Split<&str>) -> Option<i32> {
+fn sum_group(iter: &mut Split<&str>) -> Option<i32> {
     match iter.next() {
         None => None,
         Some("") => Some(0),
-        Some(s) => Some(s.parse::<i32>().unwrap() + match sum_group(iter) {
-            None => 0,
-            Some(x) => x
-        })
+        Some(s) => Some(
+            s.parse::<i32>().unwrap()
+                + match sum_group(iter) {
+                    None => 0,
+                    Some(x) => x,
+                },
+        ),
     }
 }
 
@@ -20,14 +23,19 @@ fn part1(name: &str) -> i32 {
         .expect("Couldn't open file")
         .split("\r\n")
         .batching(sum_group)
-        .max().unwrap_or(0);
+        .max()
+        .unwrap_or(0);
 }
 
 fn part2(name: &str) -> i32 {
-    return rev(sorted(fs::read_to_string(name)
-        .expect("Couldn't open file")
-        .split("\r\n")
-        .batching(sum_group))).take(3).sum();
+    return rev(sorted(
+        fs::read_to_string(name)
+            .expect("Couldn't open file")
+            .split("\r\n")
+            .batching(sum_group),
+    ))
+    .take(3)
+    .sum();
 }
 
 fn main() {

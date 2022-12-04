@@ -1,8 +1,8 @@
 use std::{fs, str::Split};
 
-use itertools::{Itertools, Chunk};
+use itertools::{Chunk, Itertools};
 
-fn priority(c : char) -> u32 {
+fn priority(c: char) -> u32 {
     if c.is_lowercase() {
         u32::from(c) - u32::from('a') + 1
     } else {
@@ -14,18 +14,28 @@ fn item_priorities(line: &str) -> Vec<u32> {
     line.chars().map(priority).collect()
 }
 
-fn misplaced_item_priority(line : &str) -> u32 {
+fn misplaced_item_priority(line: &str) -> u32 {
     let priorities = item_priorities(line);
     let l = line.len() / 2;
     let front: Vec<u32> = priorities.iter().take(l).map(|s| *s).collect();
     let back: Vec<u32> = priorities.into_iter().skip(l).collect();
-    front.into_iter().find(|s| back.iter().any(|f| *s == *f )).unwrap()
+    front
+        .into_iter()
+        .find(|s| back.iter().any(|f| *s == *f))
+        .unwrap()
 }
 
-fn badge_for_group(g : Chunk<Split<&str>>) -> u32 {
-    let rows : Vec<Vec<u32>> = g.into_iter().map(item_priorities).collect();
-    let first : Vec<u32> = rows[0].iter().filter(|s| rows[1].iter().any(|f| **s == *f)).map(|s| *s).collect();
-    first.into_iter().find(|s| rows[2].iter().any(|f| *s == *f)).unwrap()
+fn badge_for_group(g: Chunk<Split<&str>>) -> u32 {
+    let rows: Vec<Vec<u32>> = g.into_iter().map(item_priorities).collect();
+    let first: Vec<u32> = rows[0]
+        .iter()
+        .filter(|s| rows[1].iter().any(|f| **s == *f))
+        .map(|s| *s)
+        .collect();
+    first
+        .into_iter()
+        .find(|s| rows[2].iter().any(|f| *s == *f))
+        .unwrap()
 }
 
 fn part1(name: &str) -> u32 {

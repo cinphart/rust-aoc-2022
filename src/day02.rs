@@ -6,14 +6,14 @@ use regex::Regex;
 enum Move {
     ROCK,
     PAPER,
-    SCISSORS
+    SCISSORS,
 }
 
 #[derive(Clone, Copy)]
 enum WantResult {
     WIN,
     LOSE,
-    DRAW
+    DRAW,
 }
 
 trait Score {
@@ -22,14 +22,15 @@ trait Score {
 }
 
 impl Move {
-    
-    fn score(self: &Self) -> i32 { match self {
-        Move::ROCK => 1,
-        Move::PAPER => 2,
-        Move::SCISSORS => 3
-    } }
+    fn score(self: &Self) -> i32 {
+        match self {
+            Move::ROCK => 1,
+            Move::PAPER => 2,
+            Move::SCISSORS => 3,
+        }
+    }
 
-    fn win_lose(self: &Self,opponent: &Move) -> i32 {
+    fn win_lose(self: &Self, opponent: &Move) -> i32 {
         match (self, opponent) {
             (Move::ROCK, Move::ROCK) => 3,
             (Move::ROCK, Move::PAPER) => 0,
@@ -39,24 +40,26 @@ impl Move {
             (Move::PAPER, Move::SCISSORS) => 0,
             (Move::SCISSORS, Move::ROCK) => 0,
             (Move::SCISSORS, Move::PAPER) => 6,
-            (Move::SCISSORS, Move::SCISSORS) => 3
+            (Move::SCISSORS, Move::SCISSORS) => 3,
         }
     }
 }
 
 struct Play {
-    opponent : Move,
-    mine : Move
+    opponent: Move,
+    mine: Move,
 }
 
 impl Play {
     fn score(self: &Self) -> i32 {
-        return self.mine.score() + self.mine.win_lose(&self.opponent)
+        return self.mine.score() + self.mine.win_lose(&self.opponent);
     }
 }
 
 #[derive(Debug)]
-struct ParsePlayError {o: String}
+struct ParsePlayError {
+    o: String,
+}
 
 impl std::str::FromStr for Play {
     type Err = ParsePlayError;
@@ -77,20 +80,23 @@ impl std::str::FromStr for Play {
         };
 
         if let (Some(opponent), Some(mine)) = (opponent, mine) {
-            Ok(Play{opponent: opponent, mine: mine})
+            Ok(Play {
+                opponent: opponent,
+                mine: mine,
+            })
         } else {
-            Err(ParsePlayError {o: String::from(s)})
+            Err(ParsePlayError { o: String::from(s) })
         }
     }
 }
 
 struct MatchStrategy {
-    opponent : Move,
-    want: WantResult
+    opponent: Move,
+    want: WantResult,
 }
 
 impl Move {
-    fn move_for_result(self: &Self, result : WantResult) -> Move {
+    fn move_for_result(self: &Self, result: WantResult) -> Move {
         match (self, result) {
             (x, WantResult::DRAW) => *x,
             (Move::ROCK, WantResult::LOSE) => Move::SCISSORS,
@@ -122,9 +128,12 @@ impl std::str::FromStr for MatchStrategy {
         };
 
         if let (Some(opponent), Some(want)) = (opponent, want) {
-            Ok(MatchStrategy{ opponent:opponent, want: want })
+            Ok(MatchStrategy {
+                opponent: opponent,
+                want: want,
+            })
         } else {
-            Err(ParsePlayError {o: String::from(s)})
+            Err(ParsePlayError { o: String::from(s) })
         }
     }
 }
@@ -134,7 +143,7 @@ impl WantResult {
         match self {
             WantResult::LOSE => 0,
             WantResult::DRAW => 3,
-            WantResult::WIN => 6
+            WantResult::WIN => 6,
         }
     }
 }
