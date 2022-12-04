@@ -27,13 +27,10 @@ fn misplaced_item_priority(line: &str) -> u32 {
 
 fn badge_for_group(g: Chunk<Split<&str>>) -> u32 {
     let rows: Vec<Vec<u32>> = g.into_iter().map(item_priorities).collect();
-    let first: Vec<u32> = rows[0]
+    rows[0]
         .iter()
         .filter(|s| rows[1].iter().any(|f| **s == *f))
         .map(|s| *s)
-        .collect();
-    first
-        .into_iter()
         .find(|s| rows[2].iter().any(|f| *s == *f))
         .unwrap()
 }
