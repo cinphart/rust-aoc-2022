@@ -2,7 +2,7 @@
 name = "rust-aoc-2022"
 version = "0.1.0"
 edition = "2021"
-default-run = "day06"
+default-run = "day07"
 
 [[bin]]
 name = "day01"
@@ -27,6 +27,10 @@ path = "src/day05.rs"
 [[bin]]
 name = "day06"
 path = "src/day06.rs"
+
+[[bin]]
+name = "day07"
+path = "src/day07.rs"
 
 [dependencies]
 regex = "1"
