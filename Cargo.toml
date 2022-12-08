@@ -35,3 +35,4 @@ path = "src/day07.rs"
 [dependencies]
 regex = "1"
 itertools = "0.10"
+nom = "7"
