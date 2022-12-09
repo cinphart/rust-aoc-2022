@@ -3,10 +3,10 @@ use std::fs;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{line_ending, one_of},
-    combinator::{opt, recognize},
+    character::complete::{line_ending, one_of, space1},
+    combinator::{map, map_res, opt, recognize},
     multi::{many1, separated_list0, separated_list1},
-    sequence::{preceded, terminated, separated_pair},
+    sequence::{pair, preceded, separated_pair, terminated},
     IResult,
 };
 
@@ -17,59 +17,39 @@ enum DirEntry {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-enum Command {
-    Cd { name: String },
-    Ls { entries: Vec<DirEntry> },
+struct Dir {
+    name: String,
+    file_sizes: Vec<usize>,
+    sub_dirs: Vec<Cd>,
 }
 
 fn name(input: &str) -> IResult<&str, &str> {
-    let (rest, m) = recognize(many1(one_of(
+    recognize(many1(one_of(
         "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-",
-    )))(input)?;
-    Ok((rest, m))
+    )))(input)
 }
 
 fn integerp(input: &str) -> IResult<&str, usize> {
-    let (rest, i) = recognize(many1(one_of("0123456789")))(input)?;
-    Ok((rest, i.parse::<usize>().unwrap()))
+    map_res(recognize(many1(one_of("0123456789"))), |s: &str| {
+        s.parse::<usize>()
+    })(input)
 }
 
-fn cd(input: &str) -> IResult<&str, Command> {
-    let (rest, _) = recognize(tag("$ cd"))(input)?;
-    let (rest, _) = recognize(many1(tag(" ")))(rest)?;
-    let (rest, name) = name(rest)?;
-    Ok((
-        rest,
-        Command::Cd {
-            name: name.to_string(),
-        },
-    ))
+fn cd(input: &str) -> IResult<&str, &str> {
+    preceded(pair(tag("$ cd"), space1), name)(input)
 }
 
-fn dirls(input: &str) -> IResult<&str, DirEntry> {
-    let (rest, _) = recognize(tag("dir "))(input)?;
-    let (rest, name) = name(rest)?;
-    Ok((
-        rest,
-        DirEntry::Dir {
-            name: name.to_string(),
-        },
-    ))
+fn dirls(input: &str) -> IResult<&str, (&str, Option<usize>)> {
+    map(preceded(tag("dir "), name), |name| (name, None))(input)
 }
 
-fn filels(input: &str) -> IResult<&str, DirEntry> {
-    let (rest, (size, filename)) = separated_pair(
-        integerp, tag(" "), name)(input)?;
-    Ok((
-        rest,
-        DirEntry::File {
-            name: filename.to_string(),
-            size: size,
-        },
-    ))
+fn filels(input: &str) -> IResult<&str, (&str, Option<usize>)> {
+    map(separated_pair(integerp, space1, name), |(size, name)| {
+        (name, Some(size))
+    })(input)
 }
 
-fn dir_entry(input: &str) -> IResult<&str, DirEntry> {
+fn dir_entry(input: &str) -> IResult<&str, (&str, Option<usize>)> {
     alt((dirls, filels))(input)
 }
 
@@ -153,7 +133,9 @@ mod tests {
         assert_eq!(
             result,
             Command::Ls {
-                entries: vec![DirEntry::Dir{name: "a.txt".to_string()}]
+                entries: vec![DirEntry::Dir {
+                    name: "a.txt".to_string()
+                }]
             }
         )
     }
@@ -165,7 +147,10 @@ mod tests {
         assert_eq!(
             result,
             Command::Ls {
-                entries: vec![DirEntry::File{name: "file.w".to_string(), size: 1234}]
+                entries: vec![DirEntry::File {
+                    name: "file.w".to_string(),
+                    size: 1234
+                }]
             }
         )
     }
@@ -177,7 +162,15 @@ mod tests {
         assert_eq!(
             result,
             Command::Ls {
-                entries: vec![DirEntry::Dir{name: "a.txt".to_string()}, DirEntry::File{name: "file.w".to_string(), size: 1234}]
+                entries: vec![
+                    DirEntry::Dir {
+                        name: "a.txt".to_string()
+                    },
+                    DirEntry::File {
+                        name: "file.w".to_string(),
+                        size: 1234
+                    }
+                ]
             }
         )
     }
