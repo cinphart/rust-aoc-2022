@@ -1,31 +1,25 @@
-use std::fs;
+use std::{collections::HashMap, fs, cmp::min};
 
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{line_ending, one_of, space1},
     combinator::{map, map_res, opt, recognize},
-    multi::{many1, separated_list0, separated_list1},
-    sequence::{pair, preceded, separated_pair, terminated},
+    multi::{many0, many1},
+    sequence::{pair, preceded, separated_pair, terminated, tuple},
     IResult,
 };
-
-#[derive(Debug, Eq, PartialEq)]
-enum DirEntry {
-    Dir { name: String },
-    File { name: String, size: usize },
-}
 
 #[derive(Debug, Eq, PartialEq)]
 struct Dir {
     name: String,
     file_sizes: Vec<usize>,
-    sub_dirs: Vec<Cd>,
+    sub_dirs: Vec<Dir>,
 }
 
 fn name(input: &str) -> IResult<&str, &str> {
     recognize(many1(one_of(
-        "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-",
+        "/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.",
     )))(input)
 }
 
@@ -36,56 +30,119 @@ fn integerp(input: &str) -> IResult<&str, usize> {
 }
 
 fn cd(input: &str) -> IResult<&str, &str> {
-    preceded(pair(tag("$ cd"), space1), name)(input)
+    terminated(preceded(pair(tag("$ cd"), space1), name), opt(line_ending))(input)
+}
+
+fn cdup(input: &str) -> IResult<&str, ()> {
+    map(terminated(tag("$ cd .."), opt(line_ending)), |_| ())(input)
 }
 
 fn dirls(input: &str) -> IResult<&str, (&str, Option<usize>)> {
-    map(preceded(tag("dir "), name), |name| (name, None))(input)
+    map(
+        terminated(preceded(tag("dir "), name), opt(line_ending)),
+        |name| (name, None),
+    )(input)
 }
 
 fn filels(input: &str) -> IResult<&str, (&str, Option<usize>)> {
-    map(separated_pair(integerp, space1, name), |(size, name)| {
-        (name, Some(size))
-    })(input)
+    map(
+        terminated(separated_pair(integerp, space1, name), opt(line_ending)),
+        |(size, name)| (name, Some(size)),
+    )(input)
 }
 
 fn dir_entry(input: &str) -> IResult<&str, (&str, Option<usize>)> {
     alt((dirls, filels))(input)
 }
 
-fn ls(input: &str) -> IResult<&str, Command> {
+fn ls(input: &str) -> IResult<&str, HashMap<&str, usize>> {
     let (rest, entries) = preceded(
-        tag("$ ls"),
-        opt(preceded(
-            line_ending,
-            separated_list1(line_ending, dir_entry),
-        )),
+        terminated(tag("$ ls"), opt(line_ending)),
+        opt(many0(dir_entry)),
     )(input)?;
     Ok((
         rest,
-        Command::Ls {
-            entries: entries.unwrap_or(Vec::new()),
+        match entries {
+            None => HashMap::new(),
+            Some(x) => x
+                .into_iter()
+                .filter_map(|(r, s)| match s {
+                    None => None,
+                    Some(x) => Some((r, x)),
+                })
+                .collect(),
         },
     ))
 }
 
-fn command(input: &str) -> IResult<&str, Command> {
-    alt((cd, ls))(input)
+fn endit(input: &str) -> IResult<&str, ()> {
+    if input.len() == 0 {
+        Ok((input, ()))
+    } else {
+        map(cdup, |_| ())(input)
+    }
 }
 
-fn parse_commands(input: &String) -> IResult<&str, Vec<Command>> {
-    terminated(separated_list0(line_ending, command), opt(line_ending))(input.as_str())
+fn filesystem(input: &str) -> IResult<&str, Dir> {
+    map(
+        tuple((cd, ls, terminated(many0(filesystem), endit))),
+        |(name, entries, dirs)| Dir {
+            name: name.to_string(),
+            file_sizes: entries.values().map(|&s| s).collect(),
+            sub_dirs: dirs,
+        },
+    )(input)
+}
+
+fn sizeof(prefix: &String, dir: &Dir) -> (usize, usize) {
+    let ftotal = dir.file_sizes.iter().map(|&s| s).sum::<usize>();
+    let name = prefix.to_owned() + "/" + dir.name.as_str();
+    let (dirtotal, diracc) = dir
+        .sub_dirs
+        .iter()
+        .map(|s| sizeof(&name, s))
+        .fold((0, 0), |(a, b), (c, d)| (a + c, b + d));
+    let total = ftotal + dirtotal;
+    let acc = diracc + if total < 100000 { total } else { 0 };
+    (total, acc)
+}
+
+fn smallest(a: Option<usize>, b: Option<usize>) -> Option<usize> {
+    match (a,b) {
+        (None, x) => x,
+        (x, None) => x,
+        (Some(x), Some(y)) => Some(min(x, y))
+    }
+}
+
+fn smallest_deletable(prefix: &String, needed: usize, dir: &Dir) -> (usize, Option<usize>) {
+    let ftotal = dir.file_sizes.iter().map(|&s| s).sum::<usize>();
+    let name = prefix.to_owned() + "/" + dir.name.as_str();
+    let (dirtotal, diracc) = dir
+        .sub_dirs
+        .iter()
+        .map(|s| smallest_deletable(&name, needed, s))
+        .fold((0, None), |(a, b), (c, d)| (a+c, smallest(b,d)));
+    let total = ftotal + dirtotal;
+    let myacc = if total > needed {Some(total)} else {None};
+    let acc = smallest(myacc, diracc);
+    (total, acc)
 }
 
 fn part1(input: &String) -> usize {
-    let (rest, result) = parse_commands(input).unwrap();
+    let (rest, result) = filesystem(input).unwrap();
     println!("rest: {:?}", rest);
     println!("result: {:?}", result);
-    result.len()
+    sizeof(&"".to_string(), &result).1
 }
 
 fn part2(input: &String) -> usize {
-    input.len()
+    let (rest, result) = filesystem(input).unwrap();
+    println!("rest: {:?}", rest);
+    println!("result: {:?}", result);
+    let prefix = "".to_string();
+    let needed = 30000000 - (70000000-sizeof(&prefix, &result).0);
+    smallest_deletable(&prefix, needed, &result).1.unwrap()
 }
 
 fn main() {
@@ -103,85 +160,12 @@ mod tests {
     }
 
     #[test]
-    fn cd_parse_works() {
-        let (rest, result) = cd("$ cd wibble.q").unwrap();
-        assert_eq!(rest, "");
-        assert_eq!(
-            result,
-            Command::Cd {
-                name: "wibble.q".to_string()
-            }
-        )
-    }
-
-    #[test]
-    fn empty_ls_works() {
-        let (rest, result) = ls("$ ls").unwrap();
-        assert_eq!(rest, "");
-        assert_eq!(
-            result,
-            Command::Ls {
-                entries: Vec::new()
-            }
-        )
-    }
-
-    #[test]
-    fn ls_with_dir_works() {
-        let (rest, result) = ls("$ ls\r\ndir a.txt").unwrap();
-        assert_eq!(rest, "");
-        assert_eq!(
-            result,
-            Command::Ls {
-                entries: vec![DirEntry::Dir {
-                    name: "a.txt".to_string()
-                }]
-            }
-        )
-    }
-
-    #[test]
-    fn ls_with_file_works() {
-        let (rest, result) = ls("$ ls\r\n1234 file.w").unwrap();
-        assert_eq!(rest, "");
-        assert_eq!(
-            result,
-            Command::Ls {
-                entries: vec![DirEntry::File {
-                    name: "file.w".to_string(),
-                    size: 1234
-                }]
-            }
-        )
-    }
-
-    #[test]
-    fn ls_with_both_works() {
-        let (rest, result) = ls("$ ls\r\ndir a.txt\n1234 file.w").unwrap();
-        assert_eq!(rest, "");
-        assert_eq!(
-            result,
-            Command::Ls {
-                entries: vec![
-                    DirEntry::Dir {
-                        name: "a.txt".to_string()
-                    },
-                    DirEntry::File {
-                        name: "file.w".to_string(),
-                        size: 1234
-                    }
-                ]
-            }
-        )
-    }
-
-    #[test]
     fn part1_works() {
         assert_eq!(part1(&input()), 95437);
     }
 
     #[test]
     fn part2_works() {
-        assert_eq!(part2(&input()), 19);
+        assert_eq!(part2(&input()), 24933642);
     }
 }
