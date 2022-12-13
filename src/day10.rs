@@ -1,11 +1,13 @@
-use std::str::FromStr;
 use itertools::Itertools;
 use regex::Regex;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../data/Day10.txt");
 
 #[derive(Debug)]
-struct ParseError {o: String}
+struct ParseError {
+    _o: String,
+}
 
 enum Instruction {
     NoOp,
@@ -18,7 +20,9 @@ impl FromStr for Instruction {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts = s.split(" ").take(2).collect::<Vec<_>>();
         if parts[0] == "addx" {
-            let size = parts[1].parse::<i32>().or(Err(ParseError{o:s.to_string()}))?;
+            let size = parts[1]
+                .parse::<i32>()
+                .or(Err(ParseError { _o: s.to_string() }))?;
             Ok(Instruction::AddX(size))
         } else {
             Ok(Instruction::NoOp)
@@ -45,19 +49,19 @@ fn part1(input: &str) -> i32 {
         .flat_map(|s| s.steps().into_iter())
         .enumerate()
     {
-        let s = idx+1;
+        let s = idx + 1;
         acc.push((s, change, curr, label));
         curr += change;
     }
-    acc.push((acc.len()+1, 0, curr, "endstop".to_string()));
+    acc.push((acc.len() + 1, 0, curr, "endstop".to_string()));
 
-    let steps = acc.into_iter()
+    let steps = acc
+        .into_iter()
         .take(221)
         .filter(|(idx, _, _, _)| idx % 40 == 20)
         .collect::<Vec<_>>();
 
-    steps.into_iter().map(|s| (s.0 as i32) * s.2)
-        .sum::<i32>()
+    steps.into_iter().map(|s| (s.0 as i32) * s.2).sum::<i32>()
 }
 
 fn part2(input: &str) -> String {
@@ -70,25 +74,28 @@ fn part2(input: &str) -> String {
         .flat_map(|s| s.steps().into_iter())
         .enumerate()
     {
-        let s = idx+1;
+        let s = idx + 1;
         acc.push((s, change, curr, label));
         curr += change;
     }
-    acc.push((acc.len()+1, 0, curr, "endstop".to_string()));
+    acc.push((acc.len() + 1, 0, curr, "endstop".to_string()));
 
     let mut screen = [['.'; 40]; 6];
 
     for y in 0..6 {
         for x in 0..40 {
-            let idx = y*40+x;
+            let idx = y * 40 + x;
             let crsr_pos = acc[idx].2;
-            if crsr_pos >= (x as i32)-1 && crsr_pos <= (x as i32)+1 {
+            if crsr_pos >= (x as i32) - 1 && crsr_pos <= (x as i32) + 1 {
                 screen[y][x] = '#';
             }
         }
     }
 
-    screen.iter().map(|s| s.iter().collect::<String>()).join("\n")
+    screen
+        .iter()
+        .map(|s| s.iter().collect::<String>())
+        .join("\n")
 }
 
 fn main() {
@@ -102,8 +109,7 @@ mod tests {
 
     const TEST_INPUT: &str = include_str!("../data/Day10_test.txt");
 
-    const TEST_PART2_EXPECTED: &str = 
-    "##..##..##..##..##..##..##..##..##..##..
+    const TEST_PART2_EXPECTED: &str = "##..##..##..##..##..##..##..##..##..##..
 ###...###...###...###...###...###...###.
 ####....####....####....####....####....
 #####.....#####.....#####.....#####.....
