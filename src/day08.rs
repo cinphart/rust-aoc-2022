@@ -83,11 +83,11 @@ fn count_setup() -> HashMap<i8, usize> {
 fn update_counts(c: &mut HashMap<i8, usize>, h: i8) {
     // anything smaller than h can only see 1
     for i in 0..10 {
-        let current = c.get(&i).unwrap();
+        let current = *(c.get(&i).unwrap());
         if i <= h {
             c.insert(i, 1);
         } else {
-            c.insert(i, *current+1);
+            c.insert(i, current+1);
         }
     }
 }

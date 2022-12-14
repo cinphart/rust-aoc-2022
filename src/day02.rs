@@ -58,7 +58,7 @@ impl Play {
 
 #[derive(Debug)]
 struct ParsePlayError {
-    o: String,
+    _o: String,
 }
 
 impl std::str::FromStr for Play {
@@ -85,7 +85,7 @@ impl std::str::FromStr for Play {
                 mine: mine,
             })
         } else {
-            Err(ParsePlayError { o: String::from(s) })
+            Err(ParsePlayError { _o: String::from(s) })
         }
     }
 }
@@ -129,11 +129,11 @@ impl std::str::FromStr for MatchStrategy {
 
         if let (Some(opponent), Some(want)) = (opponent, want) {
             Ok(MatchStrategy {
-                opponent: opponent,
-                want: want,
+                opponent,
+                want,
             })
         } else {
-            Err(ParsePlayError { o: String::from(s) })
+            Err(ParsePlayError { _o: String::from(s) })
         }
     }
 }
