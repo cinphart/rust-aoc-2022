@@ -155,7 +155,7 @@ fn part1(input: &str) -> usize {
         .collect::<Vec<_>>();
     let mut monkey_counts: Vec<usize> = monkeys.iter().map(|_| 0).collect();
 
-    for round in 0..20 {
+    for _round in 0..20 {
         for idx in 0..monkeys.len() {
             let items = monkey_items[idx].clone();
             // this is how many times I will inspect an item
@@ -179,7 +179,7 @@ fn part1(input: &str) -> usize {
                 monkey_items[pass_to].push(v);
             }
         }
-        println!("Monkey Counts({}) = {:?}", round, monkey_counts);
+        println!("Monkey Counts({}) = {:?}", _round, monkey_counts);
         for idx in 0..monkeys.len() {
             println!(">> Monkey {} Has: {:?}", idx, monkey_items[idx]);
         }
@@ -202,7 +202,7 @@ fn part2(input: &str) -> usize {
 
     let modulo = monkeys.iter().map(|s| s.modulo).product::<usize>();
 
-    for round in 0..10000 {
+    for _round in 0..10000 {
         for idx in 0..monkeys.len() {
             let items = monkey_items[idx].clone();
             // this is how many times I will inspect an item
