@@ -1,12 +1,15 @@
 use regex::Regex;
-use std::{collections::HashSet, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+};
 
 const INPUT: &str = include_str!("../data/Day15.txt");
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash,Clone,Copy)]
 struct Point(i32, i32);
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct SensorInfo {
     loc: Point,
     closest_beacon: Point,
@@ -37,10 +40,15 @@ impl FromStr for SensorInfo {
     }
 }
 
+impl Point {
+    fn manhattan_distance(&self, p: &Point) -> i32 {
+        (self.0 - p.0).abs() + (self.1 - p.1).abs()
+    }
+}
+
 impl SensorInfo {
     fn covered_at(&self, line: i32) -> Option<(i32, i32)> {
-        let covered_manhattan =
-            (self.loc.0 - self.closest_beacon.0).abs() + (self.loc.1 - self.closest_beacon.1).abs();
+        let covered_manhattan = self.loc.manhattan_distance(&self.closest_beacon);
         let sensor_x = self.loc.0;
         let sensor_y = self.loc.1;
         let sensor_perpendicular_distance = (line - sensor_y).abs();
@@ -55,23 +63,27 @@ impl SensorInfo {
 
     fn just_not_covered(&self) -> HashSet<Point> {
         let covered_manhattan =
-            (self.loc.0 - self.closest_beacon.0).abs() + (self.loc.1 - self.closest_beacon.1).abs();
+            (self.loc.0 - self.closest_beacon.0).abs() + (self.loc.1 - self.closest_beacon.1).abs()+1;
 
         let sensor_x = self.loc.0;
         let sensor_y = self.loc.1;
 
-        (0..covered_manhattan)
+        (0..covered_manhattan+1)
             .map(|d| (d, covered_manhattan - d))
             .flat_map(|(dx, dy)| {
                 vec![
                     Point(sensor_x + dx, sensor_x + dy),
                     Point(sensor_x + dx, sensor_y - dy),
                     Point(sensor_x - dx, sensor_y - dy),
-                    Point(sensor_x - dx, sensor_y - dy),
+                    Point(sensor_x - dx, sensor_y + dy),
                 ]
                 .into_iter()
             })
             .collect()
+    }
+
+    fn hides(&self, p : &Point) -> bool {
+        return self.loc.manhattan_distance(p) <= self.loc.manhattan_distance(&self.closest_beacon)
     }
 }
 
@@ -95,7 +107,7 @@ fn part1(input: &str, line: i32) -> usize {
     covered.len() - beacons.len()
 }
 
-fn part2(input: &str) -> usize {
+fn part2(input: &str, max: i32) -> usize {
     let eol = Regex::new("\r\n|\r|\n").unwrap();
     let sensors = eol
         .split(input)
@@ -103,12 +115,37 @@ fn part2(input: &str) -> usize {
         .map(|s| s.parse::<SensorInfo>().unwrap())
         .collect::<Vec<_>>();
 
-    sensors.len()
+    let possibly_not_covered = sensors
+        .iter()
+        .flat_map(|s| s.just_not_covered().into_iter())
+        .filter(|p| p.0 >= 0 && p.0 <= max && p.1 >= 0 && p.1 <= max)
+        .fold(HashMap::new(), |mut m, s| {
+            *(m.entry(s).or_insert(0)) += 1;
+            m
+        });
+
+    // If there's only one location, *at least* two areas have to border on this one - might be more,
+    // but we can automatically exclude any point that is only in one boundary
+    let need_checking = possibly_not_covered
+        .iter()
+        .filter_map(|(k, v)| match v {
+            1 => None,
+            _ => Some(k),
+        })
+        .copied()
+        .collect::<Vec<_>>();
+
+    println!("Needs Checking: {:?}", need_checking);
+
+    // iterator through things that need checking, seeing if they are hidden by any of the sensors
+    let result = need_checking.into_iter().filter(|p| sensors.iter().all(|s| !s.hides(p))).collect::<Vec<_>>();
+    println!("Result: {:?}", result);
+    (result[0].0 as usize) * 4_000_000 + (result[0].1 as usize)
 }
 
 fn main() {
-    println!("Part 1: {}", part1(INPUT, 2000000));
-    println!("Part 2: {}", part2(INPUT));
+    println!("Part 1: {}", part1(INPUT, 2_000_000));
+    println!("Part 2: {}", part2(INPUT, 4_000_000));
 }
 
 #[cfg(test)]
@@ -130,12 +167,30 @@ mod tests {
     }
 
     #[test]
+    fn just_not_covered_works() {
+        let s = SensorInfo {
+            loc: Point(0, 0),
+            closest_beacon: Point(0, 1),
+        };
+        let mut expected: HashSet<Point> = HashSet::new();
+        expected.insert(Point(2,0));
+        expected.insert(Point(-2,0));
+        expected.insert(Point(0,2));
+        expected.insert(Point(0,-2));
+        expected.insert(Point(1,1));
+        expected.insert(Point(-1,1));
+        expected.insert(Point(1,-1));
+        expected.insert(Point(-1,-1));
+        assert_eq!(s.just_not_covered(), expected)
+    }
+
+    #[test]
     fn part1_works() {
         assert_eq!(part1(TEST_INPUT, 10), 26);
     }
 
     #[test]
     fn part2_works() {
-        assert_eq!(part2(TEST_INPUT), 56000011);
+        assert_eq!(part2(TEST_INPUT, 20), 56000011);
     }
 }
