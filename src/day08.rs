@@ -75,7 +75,7 @@ fn part1(input: &str) -> usize {
 fn count_setup() -> HashMap<i8, usize> {
     let mut r: HashMap<i8, usize> = HashMap::new();
     for i in 0..(10 as i8) {
-        r.insert(i,0);
+        r.insert(i, 0);
     }
     r
 }
@@ -87,7 +87,7 @@ fn update_counts(c: &mut HashMap<i8, usize>, h: i8) {
         if i <= h {
             c.insert(i, 1);
         } else {
-            c.insert(i, current+1);
+            c.insert(i, current + 1);
         }
     }
 }

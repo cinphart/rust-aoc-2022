@@ -93,10 +93,10 @@ fn part1(input: &str) -> usize {
                 populated_points.contains(&Point(sand_x + 1, sand_y + 1)),
             );
             (sand_x, sand_y, stopped) = match state {
-                (_, false, _) => (sand_x, sand_y+1, false),
-                (false, true, _) => (sand_x-1, sand_y+1, false),
-                (true, true, false) => (sand_x+1, sand_y+1, false),
-                (true, true, true) => (sand_x, sand_y, true)
+                (_, false, _) => (sand_x, sand_y + 1, false),
+                (false, true, _) => (sand_x - 1, sand_y + 1, false),
+                (true, true, false) => (sand_x + 1, sand_y + 1, false),
+                (true, true, true) => (sand_x, sand_y, true),
             }
         }
         done = sand_y == abyss_y;
@@ -135,10 +135,10 @@ fn part2(input: &str) -> usize {
                 populated_points.contains(&Point(sand_x + 1, sand_y + 1)),
             );
             (sand_x, sand_y, stopped) = match state {
-                (_, false, _) => (sand_x, sand_y+1, false),
-                (false, true, _) => (sand_x-1, sand_y+1, false),
-                (true, true, false) => (sand_x+1, sand_y+1, false),
-                (true, true, true) => (sand_x, sand_y, true)
+                (_, false, _) => (sand_x, sand_y + 1, false),
+                (false, true, _) => (sand_x - 1, sand_y + 1, false),
+                (true, true, false) => (sand_x + 1, sand_y + 1, false),
+                (true, true, true) => (sand_x, sand_y, true),
             }
         }
         done = populated_points.contains(&start);

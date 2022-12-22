@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs, cmp::min};
+use std::{cmp::min, collections::HashMap, fs};
 
 use nom::{
     branch::alt,
@@ -108,10 +108,10 @@ fn sizeof(prefix: &String, dir: &Dir) -> (usize, usize) {
 }
 
 fn smallest(a: Option<usize>, b: Option<usize>) -> Option<usize> {
-    match (a,b) {
+    match (a, b) {
         (None, x) => x,
         (x, None) => x,
-        (Some(x), Some(y)) => Some(min(x, y))
+        (Some(x), Some(y)) => Some(min(x, y)),
     }
 }
 
@@ -122,9 +122,9 @@ fn smallest_deletable(prefix: &String, needed: usize, dir: &Dir) -> (usize, Opti
         .sub_dirs
         .iter()
         .map(|s| smallest_deletable(&name, needed, s))
-        .fold((0, None), |(a, b), (c, d)| (a+c, smallest(b,d)));
+        .fold((0, None), |(a, b), (c, d)| (a + c, smallest(b, d)));
     let total = ftotal + dirtotal;
-    let myacc = if total > needed {Some(total)} else {None};
+    let myacc = if total > needed { Some(total) } else { None };
     let acc = smallest(myacc, diracc);
     (total, acc)
 }
@@ -141,7 +141,7 @@ fn part2(input: &String) -> usize {
     println!("rest: {:?}", rest);
     println!("result: {:?}", result);
     let prefix = "".to_string();
-    let needed = 30000000 - (70000000-sizeof(&prefix, &result).0);
+    let needed = 30000000 - (70000000 - sizeof(&prefix, &result).0);
     smallest_deletable(&prefix, needed, &result).1.unwrap()
 }
 

@@ -4,7 +4,7 @@ use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{line_ending, one_of},
-    combinator::{map, map_res, recognize, opt},
+    combinator::{map, map_res, opt, recognize},
     multi::{many1, separated_list0, separated_list1},
     sequence::{delimited, pair, terminated},
     IResult,
@@ -75,7 +75,10 @@ fn item(input: &str) -> IResult<&str, Item> {
 }
 
 fn itempair(input: &str) -> IResult<&str, (Item, Item)> {
-    pair(terminated(item, line_ending), terminated(item, opt(line_ending)))(input)
+    pair(
+        terminated(item, line_ending),
+        terminated(item, opt(line_ending)),
+    )(input)
 }
 
 fn part1(input: &str) -> usize {
