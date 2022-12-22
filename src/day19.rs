@@ -21,7 +21,7 @@ mod tests {
 
     #[test]
     fn part1_works() {
-        assert_eq!(part1(TEST_INPUT), 31);
+        assert_eq!(part1(TEST_INPUT), 33);
     }
 
     #[test]
